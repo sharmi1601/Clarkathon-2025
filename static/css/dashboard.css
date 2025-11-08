@@ -1,5 +1,39 @@
 /* Dashboard Specific Styles - Black and White Theme */
 
+/* Hero Section */
+.hero-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 2rem;
+}
+
+.hero-text {
+    flex: 1;
+}
+
+/* Danger Button */
+.btn-danger {
+    background: #000000;
+    color: #ff4444;
+    border: 2px solid #ff4444;
+    padding: 0.8rem 1.5rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: 'Poppins', sans-serif;
+    white-space: nowrap;
+}
+
+.btn-danger:hover {
+    background: #ff4444;
+    color: #000000;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 68, 68, 0.4);
+}
+
 /* Stats Summary */
 .stats-summary {
     display: grid;
@@ -207,6 +241,16 @@ canvas {
 }
 
 @media (max-width: 768px) {
+    .hero-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .btn-danger {
+        width: 100%;
+    }
+    
     .stats-summary {
         grid-template-columns: 1fr;
     }

@@ -27,8 +27,13 @@
     <div class="container">
         <!-- Hero Section -->
         <header class="hero">
-            <h1 class="hero-title">Your Progress Dashboard</h1>
-            <p class="hero-subtitle">Track your achievements and monitor your fitness journey</p>
+            <div class="hero-content">
+                <div class="hero-text">
+                    <h1 class="hero-title">Your Progress Dashboard</h1>
+                    <p class="hero-subtitle">Track your achievements and monitor your fitness journey</p>
+                </div>
+                <button id="clear-data-btn" class="btn btn-danger">Clear All Data</button>
+            </div>
         </header>
         
         <!-- Stats Summary -->
@@ -126,12 +131,21 @@
         Chart.defaults.borderColor = '#333333';
         Chart.defaults.font.family = 'Poppins';
         
-        // Sample data for charts
+        // Real data from backend
+        const weeklyStatsFromDB = {{ weekly_stats | tojson }};
+        const exerciseDistFromDB = {{ exercise_distribution | tojson }};
+        
+        // Process weekly stats
+        const dayOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+        const weeklyWorkoutCounts = dayOrder.map(day => {
+            return weeklyStatsFromDB[day] ? weeklyStatsFromDB[day].workout_count : 0;
+        });
+        
         const weeklyData = {
             labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
             datasets: [{
-                label: 'Workout Minutes',
-                data: [30, 45, 0, 60, 20, 0, 45],
+                label: 'Workout Sessions',
+                data: weeklyWorkoutCounts,
                 backgroundColor: [
                     'rgba(255, 99, 132, 0.8)',
                     'rgba(54, 162, 235, 0.8)',
@@ -155,23 +169,75 @@
             }]
         };
         
+        // Process exercise distribution
+        const exerciseLabels = [];
+        const exerciseCounts = [];
+        
+        if (exerciseDistFromDB && Object.keys(exerciseDistFromDB).length > 0) {
+            for (const [exercise, count] of Object.entries(exerciseDistFromDB)) {
+                exerciseLabels.push(exercise.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()));
+                exerciseCounts.push(count);
+            }
+        } else {
+            // Fallback to sample data if no workouts yet
+            exerciseLabels.push('Squats', 'Push Ups', 'Hammer Curls');
+            exerciseCounts.push(0, 0, 0);
+        }
+        
         const exerciseData = {
-            labels: ['Squats', 'Push Ups', 'Hammer Curls'],
+            labels: exerciseLabels,
             datasets: [{
-                data: [40, 35, 25],
+                data: exerciseCounts,
                 backgroundColor: [
                     'rgba(255, 99, 132, 0.8)',
                     'rgba(54, 162, 235, 0.8)',
-                    'rgba(255, 206, 86, 0.8)'
+                    'rgba(255, 206, 86, 0.8)',
+                    'rgba(75, 192, 192, 0.8)',
+                    'rgba(153, 102, 255, 0.8)',
+                    'rgba(255, 159, 64, 0.8)'
                 ],
                 borderColor: [
                     'rgba(255, 99, 132, 1)',
                     'rgba(54, 162, 235, 1)',
-                    'rgba(255, 206, 86, 1)'
+                    'rgba(255, 206, 86, 1)',
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(153, 102, 255, 1)',
+                    'rgba(255, 159, 64, 1)'
                 ],
                 borderWidth: 2
             }]
         };
+        
+        // Clear data functionality
+        document.addEventListener('DOMContentLoaded', () => {
+            const clearDataBtn = document.getElementById('clear-data-btn');
+            
+            if (clearDataBtn) {
+                clearDataBtn.addEventListener('click', () => {
+                    if (confirm('Are you sure you want to delete ALL workout data? This action cannot be undone.')) {
+                        fetch('/clear_all_data', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            }
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                alert('All workout data has been cleared successfully!');
+                                location.reload(); // Refresh the page
+                            } else {
+                                alert('Failed to clear data: ' + (data.error || 'Unknown error'));
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            alert('An error occurred while clearing data.');
+                        });
+                    }
+                });
+            }
+        });
         
         // Initialize charts
         window.addEventListener('DOMContentLoaded', () => {

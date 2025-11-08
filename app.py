@@ -209,7 +209,9 @@ def dashboard():
                               weekly_workouts=weekly_workout_count,
                               total_workouts=user_stats['total_workouts'],
                               total_exercises=user_stats['total_exercises'],
-                              streak_days=user_stats['streak_days'])
+                              streak_days=user_stats['streak_days'],
+                              weekly_stats=weekly_stats,
+                              exercise_distribution=exercise_distribution)
     except Exception as e:
         logger.error(f"Error in dashboard: {e}")
         traceback.print_exc()
@@ -273,11 +275,19 @@ def stop_exercise():
         # Calculate duration
         duration = int(time.time() - workout_start_time) if workout_start_time else 0
         
-        # Log the workout
+        # Calculate actual reps completed
+        # Complete sets achieved the goal, partial set is the current counter
+        total_reps_completed = (sets_completed * exercise_goal) + exercise_counter
+        actual_sets = sets_completed + (1 if exercise_counter > 0 else 0)
+        
+        # Calculate average reps per set (for logging)
+        avg_reps_per_set = total_reps_completed // actual_sets if actual_sets > 0 else 0
+        
+        # Log the workout with actual performance
         workout_logger.log_workout(
             exercise_type=current_exercise_data['type'],
-            sets=sets_completed + (1 if exercise_counter > 0 else 0),  # Include partial set
-            reps=exercise_goal,
+            sets=actual_sets,
+            reps=avg_reps_per_set if avg_reps_per_set > 0 else exercise_counter,  # Use actual reps
             duration_seconds=duration
         )
     
@@ -296,6 +306,16 @@ def get_status():
         'total_sets': sets_goal,
         'rep_goal': exercise_goal
     })
+
+@app.route('/clear_all_data', methods=['POST'])
+def clear_all_data():
+    """Clear all workout data from the database"""
+    try:
+        workout_logger.clear_all_data()
+        return jsonify({'success': True, 'message': 'All data cleared successfully'})
+    except Exception as e:
+        logger.error(f"Error clearing data: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/profile')
 def profile():
