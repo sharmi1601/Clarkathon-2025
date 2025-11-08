@@ -12,7 +12,6 @@
     <nav class="navbar">
         <div class="nav-container">
             <div class="logo">
-                <span class="logo-icon">💪</span>
                 <span class="logo-text">FitTrack AI</span>
             </div>
             <ul class="nav-menu">
@@ -94,17 +93,11 @@
                     </div>
                     <div class="config-grid">
                         <div class="input-wrapper">
-                            <label for="sets">
-                                <span class="label-icon">🔢</span>
-                                Number of Sets
-                            </label>
+                            <label for="sets">Number of Sets</label>
                             <input type="number" id="sets" min="1" max="10" value="3">
                         </div>
                         <div class="input-wrapper">
-                            <label for="reps">
-                                <span class="label-icon">🔁</span>
-                                Reps per Set
-                            </label>
+                            <label for="reps">Reps per Set</label>
                             <input type="number" id="reps" min="1" max="30" value="10">
                         </div>
                     </div>
@@ -113,11 +106,9 @@
                 <!-- Action Buttons -->
                 <div class="button-group">
                     <button id="start-btn" class="btn btn-primary">
-                        <span class="btn-icon">▶</span>
                         Start Workout
                     </button>
                     <button id="stop-btn" class="btn btn-secondary" disabled>
-                        <span class="btn-icon">⏹</span>
                         Stop Workout
                     </button>
                 </div>
@@ -133,23 +124,20 @@
                     </div>
                     <div class="stats-grid">
                         <div class="stat-item">
-                            <div class="stat-icon">🏋️</div>
+                            <div class="stat-label-box">Exercise</div>
                             <div class="stat-content">
-                                <span class="stat-label">Exercise</span>
                                 <span id="current-exercise" class="stat-value">None</span>
                             </div>
                         </div>
                         <div class="stat-item">
-                            <div class="stat-icon">📊</div>
+                            <div class="stat-label-box">Current Set</div>
                             <div class="stat-content">
-                                <span class="stat-label">Current Set</span>
                                 <span id="current-set" class="stat-value">0 / 0</span>
                             </div>
                         </div>
                         <div class="stat-item">
-                            <div class="stat-icon">🔄</div>
+                            <div class="stat-label-box">Repetitions</div>
                             <div class="stat-content">
-                                <span class="stat-label">Repetitions</span>
                                 <span id="current-reps" class="stat-value">0 / 0</span>
                             </div>
                         </div>

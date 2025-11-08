@@ -1,4 +1,4 @@
-/* Dashboard Specific Styles */
+/* Dashboard Specific Styles - Black and White Theme */
 
 /* Stats Summary */
 .stats-summary {
@@ -10,17 +10,16 @@
 }
 
 .summary-card {
-    background: var(--card-bg);
-    border-radius: 16px;
+    background: #000000;
+    border-radius: 8px;
     padding: 2rem;
     border: 1px solid var(--border-color);
     box-shadow: var(--shadow);
     display: flex;
-    gap: 1.5rem;
-    align-items: flex-start;
+    flex-direction: column;
+    gap: 1rem;
     transition: all 0.3s ease;
     position: relative;
-    overflow: hidden;
 }
 
 .summary-card::before {
@@ -29,79 +28,44 @@
     top: 0;
     left: 0;
     width: 100%;
-    height: 4px;
-    background: var(--primary-gradient);
+    height: 3px;
+    background: var(--text-primary);
 }
 
-.summary-card:nth-child(2)::before {
-    background: var(--secondary-gradient);
-}
-
-.summary-card:nth-child(3)::before {
-    background: var(--success-gradient);
-}
-
-.summary-card:nth-child(4)::before {
-    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+.summary-card:nth-child(even)::before {
+    background: linear-gradient(90deg, #ffffff 0%, #666666 100%);
 }
 
 .summary-card:hover {
-    transform: translateY(-10px);
+    transform: translateY(-5px);
     box-shadow: var(--shadow-lg);
+    border-color: var(--text-secondary);
 }
 
-.summary-icon {
-    font-size: 3rem;
-    flex-shrink: 0;
-    animation: float 3s ease-in-out infinite;
-}
-
-@keyframes float {
-    0%, 100% {
-        transform: translateY(0);
-    }
-    50% {
-        transform: translateY(-10px);
-    }
+.summary-label {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
 .summary-content {
-    flex: 1;
-}
-
-.summary-content h3 {
-    font-size: 0.9rem;
-    color: var(--text-secondary);
-    margin-bottom: 0.5rem;
-    font-weight: 500;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
 }
 
 .summary-value {
     font-size: 2.5rem;
     font-weight: 700;
-    background: var(--primary-gradient);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin-bottom: 0.5rem;
+    color: var(--text-primary);
     line-height: 1;
 }
 
 .summary-trend {
     font-size: 0.85rem;
     color: var(--text-secondary);
-    display: inline-flex;
-    align-items: center;
-    gap: 0.3rem;
-}
-
-.summary-trend.positive {
-    color: #4facfe;
-}
-
-.summary-trend.positive::before {
-    content: '↗';
-    font-size: 1.2rem;
 }
 
 /* Charts Section */
@@ -113,8 +77,8 @@
 }
 
 .chart-container {
-    background: var(--card-bg);
-    border-radius: 16px;
+    background: #000000;
+    border-radius: 8px;
     padding: 2rem;
     border: 1px solid var(--border-color);
     box-shadow: var(--shadow);
@@ -122,8 +86,9 @@
 }
 
 .chart-container:hover {
-    transform: translateY(-5px);
+    transform: translateY(-2px);
     box-shadow: var(--shadow-lg);
+    border-color: var(--text-secondary);
 }
 
 .chart-header {
@@ -134,6 +99,7 @@
     font-size: 1.3rem;
     font-weight: 600;
     margin-bottom: 0.3rem;
+    color: var(--text-primary);
 }
 
 .chart-header p {
@@ -147,8 +113,8 @@ canvas {
 
 /* Recent Workouts Section */
 .recent-section {
-    background: var(--card-bg);
-    border-radius: 16px;
+    background: #000000;
+    border-radius: 8px;
     padding: 2rem;
     border: 1px solid var(--border-color);
     box-shadow: var(--shadow);
@@ -163,6 +129,7 @@ canvas {
     font-size: 1.5rem;
     font-weight: 600;
     margin-bottom: 0.3rem;
+    color: var(--text-primary);
 }
 
 .section-header p {
@@ -181,7 +148,8 @@ canvas {
 }
 
 .workout-table thead {
-    background: rgba(102, 126, 234, 0.1);
+    background: #000000;
+    border-bottom: 2px solid var(--border-color);
 }
 
 .workout-table th {
@@ -190,13 +158,15 @@ canvas {
     font-weight: 600;
     font-size: 0.9rem;
     color: var(--text-secondary);
-    border-bottom: 2px solid var(--border-color);
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
 .workout-table td {
     padding: 1rem 1.5rem;
     border-bottom: 1px solid var(--border-color);
     font-size: 0.95rem;
+    color: var(--text-primary);
 }
 
 .workout-table tbody tr {
@@ -204,27 +174,29 @@ canvas {
 }
 
 .workout-table tbody tr:hover {
-    background: rgba(102, 126, 234, 0.05);
-    transform: scale(1.01);
+    background: var(--hover-bg);
 }
 
 .table-badge {
     display: inline-block;
     padding: 0.3rem 0.8rem;
-    background: rgba(102, 126, 234, 0.2);
-    border-radius: 8px;
+    background: #000000;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
     font-size: 0.85rem;
     font-weight: 500;
+    color: var(--text-secondary);
 }
 
 .duration-badge {
     display: inline-block;
     padding: 0.3rem 0.8rem;
-    background: rgba(79, 172, 254, 0.2);
-    border-radius: 8px;
+    background: var(--primary-color);
+    border: 1px solid var(--text-primary);
+    border-radius: 4px;
     font-size: 0.85rem;
     font-weight: 600;
-    color: #4facfe;
+    color: var(--text-primary);
 }
 
 /* Responsive Design */
@@ -241,10 +213,6 @@ canvas {
     
     .summary-card {
         padding: 1.5rem;
-    }
-    
-    .summary-icon {
-        font-size: 2.5rem;
     }
     
     .summary-value {

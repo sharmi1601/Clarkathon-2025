@@ -14,7 +14,6 @@
     <nav class="navbar">
         <div class="nav-container">
             <div class="logo">
-                <span class="logo-icon">💪</span>
                 <span class="logo-text">FitTrack AI</span>
             </div>
             <ul class="nav-menu">
@@ -35,35 +34,31 @@
         <!-- Stats Summary -->
         <div class="stats-summary">
             <div class="summary-card">
-                <div class="summary-icon">🏆</div>
+                <div class="summary-label">Total Workouts</div>
                 <div class="summary-content">
-                    <h3>Total Workouts</h3>
                     <p class="summary-value">{{ total_workouts }}</p>
-                    <span class="summary-trend positive">+12% this month</span>
+                    <span class="summary-trend">+12% this month</span>
                 </div>
             </div>
             <div class="summary-card">
-                <div class="summary-icon">💪</div>
+                <div class="summary-label">Total Exercises</div>
                 <div class="summary-content">
-                    <h3>Total Exercises</h3>
                     <p class="summary-value">{{ total_exercises }}</p>
-                    <span class="summary-trend positive">+8% this month</span>
+                    <span class="summary-trend">+8% this month</span>
                 </div>
             </div>
             <div class="summary-card">
-                <div class="summary-icon">📅</div>
+                <div class="summary-label">This Week</div>
                 <div class="summary-content">
-                    <h3>This Week</h3>
                     <p class="summary-value">{{ weekly_workouts }}</p>
-                    <span class="summary-trend">Keep it up!</span>
+                    <span class="summary-trend">Keep it up</span>
                 </div>
             </div>
             <div class="summary-card">
-                <div class="summary-icon">🔥</div>
+                <div class="summary-label">Streak Days</div>
                 <div class="summary-content">
-                    <h3>Streak</h3>
-                    <p class="summary-value">{{ streak_days }} days</p>
-                    <span class="summary-trend positive">New record!</span>
+                    <p class="summary-value">{{ streak_days }}</p>
+                    <span class="summary-trend">New record</span>
                 </div>
             </div>
         </div>
@@ -115,7 +110,6 @@
                         {% else %}
                         <tr>
                             <td colspan="5" style="text-align: center; padding: 2rem;">
-                                <span style="font-size: 3rem;">🏋️</span>
                                 <p style="margin-top: 1rem; color: var(--text-secondary);">No workouts yet. Start your first session!</p>
                             </td>
                         </tr>
@@ -127,9 +121,9 @@
     </div>
     
     <script>
-        // Chart.js configuration
-        Chart.defaults.color = '#a0a0c0';
-        Chart.defaults.borderColor = '#2a2a40';
+        // Chart.js configuration for black and white theme
+        Chart.defaults.color = '#999999';
+        Chart.defaults.borderColor = '#333333';
         Chart.defaults.font.family = 'Poppins';
         
         // Sample data for charts
@@ -138,10 +132,10 @@
             datasets: [{
                 label: 'Workout Minutes',
                 data: [30, 45, 0, 60, 20, 0, 45],
-                backgroundColor: 'rgba(102, 126, 234, 0.8)',
-                borderColor: 'rgba(102, 126, 234, 1)',
+                backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                borderColor: 'rgba(255, 255, 255, 1)',
                 borderWidth: 2,
-                borderRadius: 8,
+                borderRadius: 4,
             }]
         };
         
@@ -150,14 +144,14 @@
             datasets: [{
                 data: [40, 35, 25],
                 backgroundColor: [
-                    'rgba(102, 126, 234, 0.8)',
-                    'rgba(240, 147, 251, 0.8)',
-                    'rgba(79, 172, 254, 0.8)'
+                    'rgba(255, 255, 255, 0.9)',
+                    'rgba(255, 255, 255, 0.6)',
+                    'rgba(255, 255, 255, 0.3)'
                 ],
                 borderColor: [
-                    'rgba(102, 126, 234, 1)',
-                    'rgba(240, 147, 251, 1)',
-                    'rgba(79, 172, 254, 1)'
+                    'rgba(255, 255, 255, 1)',
+                    'rgba(255, 255, 255, 1)',
+                    'rgba(255, 255, 255, 1)'
                 ],
                 borderWidth: 2
             }]
@@ -182,7 +176,7 @@
                             y: {
                                 beginAtZero: true,
                                 grid: {
-                                    color: 'rgba(255, 255, 255, 0.05)'
+                                    color: 'rgba(255, 255, 255, 0.1)'
                                 }
                             },
                             x: {
