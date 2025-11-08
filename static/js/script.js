@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Elements
-    const exerciseOptions = document.querySelectorAll('.exercise-option');
+    const exerciseOptions = document.querySelectorAll('.exercise-item');
     const startBtn = document.getElementById('start-btn');
     const stopBtn = document.getElementById('stop-btn');
     const setsInput = document.getElementById('sets');
@@ -23,6 +23,9 @@ document.addEventListener('DOMContentLoaded', function() {
             // Add selected class to clicked option
             this.classList.add('selected');
             selectedExercise = this.getAttribute('data-exercise');
+            
+            // Visual feedback
+            console.log('Selected exercise:', selectedExercise);
         });
     });
     

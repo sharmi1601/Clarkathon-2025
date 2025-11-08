@@ -3,74 +3,155 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fitness Trainer</title>
+    <title>FitTrack AI - Your Personal Trainer</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <span class="logo-icon">💪</span>
+                <span class="logo-text">FitTrack AI</span>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="/" class="nav-link active">Home</a></li>
+                <li><a href="/dashboard" class="nav-link">Dashboard</a></li>
+                <li><a href="/profile" class="nav-link">Profile</a></li>
+            </ul>
+        </div>
+    </nav>
+
     <div class="container">
-        <header>
-            <h1>Fitness Trainer</h1>
-            <p>AI-powered exercise tracking and feedback</p>
+        <!-- Hero Section -->
+        <header class="hero">
+            <h1 class="hero-title">Transform Your Fitness Journey</h1>
+            <p class="hero-subtitle">AI-Powered Real-Time Exercise Tracking & Form Correction</p>
         </header>
         
         <div class="main-content">
-            <div class="video-container">
-                <img id="video" src="{{ url_for('video_feed') }}" alt="Fitness Tracker Video Feed">
+            <!-- Video Feed Section -->
+            <div class="video-section">
+                <div class="video-card">
+                    <div class="video-header">
+                        <span class="live-indicator">
+                            <span class="pulse"></span>
+                            LIVE
+                        </span>
+                        <h3>Camera Feed</h3>
+                    </div>
+                    <div class="video-wrapper">
+                        <img id="video" src="{{ url_for('video_feed') }}" alt="Fitness Tracker Video Feed">
+                    </div>
+                </div>
             </div>
             
-            <div class="controls">
-                <div class="exercise-selection">
-                    <h2>Select Exercise</h2>
-                    <div class="exercise-options">
-                        <div class="exercise-option" data-exercise="squat">
-                            <img src="{{ url_for('static', filename='images/squat.png') }}" alt="Squat">
-                            <h3>Squat</h3>
+            <!-- Control Panel -->
+            <div class="control-panel">
+                <!-- Exercise Selection -->
+                <div class="card exercise-card">
+                    <div class="card-header">
+                        <h2>Choose Your Exercise</h2>
+                        <p>Select an exercise to begin tracking</p>
+                    </div>
+                    <div class="exercise-grid">
+                        <div class="exercise-item" data-exercise="squat">
+                            <div class="exercise-image">
+                                <img src="{{ url_for('static', filename='images/squat.png') }}" alt="Squat">
+                            </div>
+                            <div class="exercise-info">
+                                <h3>Squat</h3>
+                                <span class="exercise-badge">Lower Body</span>
+                            </div>
                         </div>
-                        <div class="exercise-option" data-exercise="push_up">
-                            <img src="{{ url_for('static', filename='images/push_up.png') }}" alt="Push Up">
-                            <h3>Push Up</h3>
+                        <div class="exercise-item" data-exercise="push_up">
+                            <div class="exercise-image">
+                                <img src="{{ url_for('static', filename='images/push_up.png') }}" alt="Push Up">
+                            </div>
+                            <div class="exercise-info">
+                                <h3>Push Up</h3>
+                                <span class="exercise-badge">Upper Body</span>
+                            </div>
                         </div>
-                        <div class="exercise-option" data-exercise="hammer_curl">
-                            <img src="{{ url_for('static', filename='images/hammer_curl.png') }}" alt="Hammer Curl">
-                            <h3>Hammer Curl</h3>
+                        <div class="exercise-item" data-exercise="hammer_curl">
+                            <div class="exercise-image">
+                                <img src="{{ url_for('static', filename='images/hammer_curl.png') }}" alt="Hammer Curl">
+                            </div>
+                            <div class="exercise-info">
+                                <h3>Hammer Curl</h3>
+                                <span class="exercise-badge">Arms</span>
+                            </div>
                         </div>
                     </div>
                 </div>
                 
-                <div class="exercise-config">
-                    <h2>Configure Workout</h2>
-                    <div class="config-inputs">
-                        <div class="input-group">
-                            <label for="sets">Sets:</label>
+                <!-- Workout Configuration -->
+                <div class="card config-card">
+                    <div class="card-header">
+                        <h2>Workout Settings</h2>
+                        <p>Configure your training parameters</p>
+                    </div>
+                    <div class="config-grid">
+                        <div class="input-wrapper">
+                            <label for="sets">
+                                <span class="label-icon">🔢</span>
+                                Number of Sets
+                            </label>
                             <input type="number" id="sets" min="1" max="10" value="3">
                         </div>
-                        <div class="input-group">
-                            <label for="reps">Repetitions:</label>
+                        <div class="input-wrapper">
+                            <label for="reps">
+                                <span class="label-icon">🔁</span>
+                                Reps per Set
+                            </label>
                             <input type="number" id="reps" min="1" max="30" value="10">
                         </div>
                     </div>
                 </div>
                 
-                <div class="action-buttons">
-                    <button id="start-btn" class="btn primary-btn">Start Workout</button>
-                    <button id="stop-btn" class="btn secondary-btn" disabled>Stop Workout</button>
+                <!-- Action Buttons -->
+                <div class="button-group">
+                    <button id="start-btn" class="btn btn-primary">
+                        <span class="btn-icon">▶</span>
+                        Start Workout
+                    </button>
+                    <button id="stop-btn" class="btn btn-secondary" disabled>
+                        <span class="btn-icon">⏹</span>
+                        Stop Workout
+                    </button>
                 </div>
                 
-                <div class="workout-status">
-                    <h2>Current Status</h2>
-                    <div class="status-display">
-                        <div class="status-item">
-                            <span class="status-label">Exercise:</span>
-                            <span id="current-exercise" class="status-value">None</span>
+                <!-- Workout Status -->
+                <div class="card status-card">
+                    <div class="card-header">
+                        <h2>Live Stats</h2>
+                        <div class="status-indicator">
+                            <span class="status-dot"></span>
+                            Ready
                         </div>
-                        <div class="status-item">
-                            <span class="status-label">Set:</span>
-                            <span id="current-set" class="status-value">0 / 0</span>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-icon">🏋️</div>
+                            <div class="stat-content">
+                                <span class="stat-label">Exercise</span>
+                                <span id="current-exercise" class="stat-value">None</span>
+                            </div>
                         </div>
-                        <div class="status-item">
-                            <span class="status-label">Repetitions:</span>
-                            <span id="current-reps" class="status-value">0 / 0</span>
+                        <div class="stat-item">
+                            <div class="stat-icon">📊</div>
+                            <div class="stat-content">
+                                <span class="stat-label">Current Set</span>
+                                <span id="current-set" class="stat-value">0 / 0</span>
+                            </div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-icon">🔄</div>
+                            <div class="stat-content">
+                                <span class="stat-label">Repetitions</span>
+                                <span id="current-reps" class="stat-value">0 / 0</span>
+                            </div>
                         </div>
                     </div>
                 </div>
