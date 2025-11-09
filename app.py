@@ -55,6 +55,7 @@ except ImportError:
 ai_coach = None
 try:
     from ai.coach_coordinator import initialize_coach
+    from ai.voice_feedback import speak_feedback
     import os
     # Groq API key - load from environment variable for security
     GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
@@ -88,6 +89,7 @@ exercise_goal = 0
 sets_completed = 0
 sets_goal = 0
 workout_start_time = None
+workout_warnings_count = 0  # Track form warnings during session
 
 def initialize_camera():
     global camera
@@ -129,10 +131,19 @@ def generate_frames():
                     
                     # AI Coach feedback for squats
                     if ai_coach:
+                        # Detect potential form issues from angle
+                        global workout_warnings_count
+                        warning = None
+                        if angle < 70:
+                            warning = "Knee angle too deep - risk of joint stress"
+                            workout_warnings_count += 1
+                        elif angle > 175:
+                            warning = "Knees locking out - keep slight bend"
+                        
                         posture_data = {
                             'angle': angle,
                             'stage': stage,
-                            'warning': None  # Squats don't have warnings in current implementation
+                            'warning': warning
                         }
                         context = {
                             'rep': counter,
@@ -149,10 +160,21 @@ def generate_frames():
                     
                     # AI Coach feedback for push-ups
                     if ai_coach:
+                        # Detect potential form issues from angle
+                        warning = None
+                        if angle < 70:
+                            warning = "Not low enough - chest should almost touch floor"
+                            workout_warnings_count += 1
+                        elif 70 <= angle <= 90 and stage == "Down":
+                            # Good depth - no warning
+                            pass
+                        elif angle > 160 and stage == "Down":
+                            warning = "Go lower for full range of motion"
+                        
                         posture_data = {
                             'angle': angle,
                             'stage': stage,
-                            'warning': None  # Push-ups don't have warnings in current implementation
+                            'warning': warning
                         }
                         context = {
                             'rep': counter,
@@ -176,6 +198,12 @@ def generate_frames():
                     
                     # AI Coach feedback for hammer curls
                     if ai_coach:
+                        # Count warnings
+                        if warning_message_right:
+                            workout_warnings_count += 1
+                        if warning_message_left:
+                            workout_warnings_count += 1
+                        
                         posture_data = {
                             'angle_right': angle_right,
                             'angle_left': angle_left,
@@ -303,7 +331,7 @@ def start_exercise():
     """Start a new exercise based on user selection"""
     global exercise_running, current_exercise, current_exercise_data
     global exercise_counter, exercise_goal, sets_completed, sets_goal
-    global workout_start_time
+    global workout_start_time, workout_warnings_count
     
     data = request.json
     exercise_type = data.get('exercise_type')
@@ -317,6 +345,7 @@ def start_exercise():
     exercise_counter = 0
     sets_completed = 0
     workout_start_time = time.time()
+    workout_warnings_count = 0  # Reset warnings for new session
     
     # Initialize the appropriate exercise class
     if exercise_type == "squat":
@@ -335,6 +364,11 @@ def start_exercise():
         'reps': exercise_goal
     }
     
+    # Reset AI Coach session for fresh workout
+    if ai_coach:
+        ai_coach.reset_session()
+        logger.info("🔄 AI Coach reset for new workout session")
+    
     # Start the exercise
     exercise_running = True
     
@@ -344,7 +378,9 @@ def start_exercise():
 def stop_exercise():
     """Stop the current exercise and log the workout"""
     global exercise_running, current_exercise_data, workout_start_time
-    global exercise_counter, exercise_goal, sets_completed, sets_goal
+    global exercise_counter, exercise_goal, sets_completed, sets_goal, workout_warnings_count
+    
+    workout_report = None
     
     if exercise_running and current_exercise_data:
         # Calculate duration
@@ -365,9 +401,34 @@ def stop_exercise():
             reps=avg_reps_per_set if avg_reps_per_set > 0 else exercise_counter,  # Use actual reps
             duration_seconds=duration
         )
+        
+        # Generate AI workout report
+        if ai_coach and ai_coach.groq_coach:
+            try:
+                workout_data = {
+                    'exercise_type': current_exercise_data['type'],
+                    'sets_completed': actual_sets,
+                    'total_reps': total_reps_completed,
+                    'duration_seconds': duration,
+                    'warnings_count': workout_warnings_count,
+                    'target_sets': sets_goal,
+                    'target_reps': exercise_goal
+                }
+                workout_report = ai_coach.groq_coach.generate_workout_report(workout_data)
+                logger.info(f"📊 Generated workout report: {workout_report.get('report', '')[:100]}...")
+                
+                # Optionally speak the summary
+                if ai_coach.enable_voice:
+                    summary_line = workout_report.get('report', '').split('\n')[0]  # First line only
+                    speak_feedback(summary_line, priority=False)
+            except Exception as e:
+                logger.error(f"Error generating workout report: {e}")
     
     exercise_running = False
-    return jsonify({'success': True})
+    return jsonify({
+        'success': True,
+        'report': workout_report.get('report') if workout_report else None
+    })
 
 @app.route('/get_status', methods=['GET'])
 def get_status():

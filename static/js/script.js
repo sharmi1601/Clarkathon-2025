@@ -92,6 +92,13 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
+                // Display workout report if available
+                if (data.report) {
+                    // Show report in a clean alert
+                    setTimeout(() => {
+                        alert('🏋️ WORKOUT REPORT 🏋️\n\n' + data.report);
+                    }, 500);
+                }
                 resetWorkoutUI();
             }
         })

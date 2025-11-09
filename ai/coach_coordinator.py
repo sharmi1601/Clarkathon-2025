@@ -21,8 +21,12 @@ class AICoachCoordinator:
         """
         self.enable_voice = enable_voice
         self.last_feedback_time = 0
-        self.feedback_cooldown = 8  # Seconds between feedback
+        self.last_warning_time = 0
+        self.feedback_cooldown = 6  # Seconds between normal feedback
+        self.warning_cooldown = 3  # Shorter cooldown for safety warnings
         self.rep_last_feedback = -1  # Track when we last gave feedback
+        self.last_stage = None  # Track movement stage changes
+        self.feedback_count = 0  # Track total feedback given
         
         # Initialize Groq LLM
         try:
@@ -36,7 +40,7 @@ class AICoachCoordinator:
     
     def analyze_and_coach(self, exercise_type, posture_data, context=None):
         """
-        Main function: Analyze posture and provide voice coaching
+        Main function: Analyze posture and provide voice coaching with smart timing
         
         Args:
             exercise_type: Type of exercise
@@ -51,36 +55,65 @@ class AICoachCoordinator:
         
         current_time = time.time()
         current_rep = context.get('rep', 0) if context else 0
+        current_stage = posture_data.get('stage', '')
         
-        # Cooldown logic: Don't spam feedback
-        if current_time - self.last_feedback_time < self.feedback_cooldown:
-            return None
-        
-        # Only give feedback when form is wrong OR new rep starts
+        # Check feedback triggers (prioritized)
         has_warning = self._has_warning(posture_data)
         new_rep = current_rep != self.rep_last_feedback
+        stage_changed = current_stage != self.last_stage
         
-        if not has_warning and not new_rep:
-            return None
+        # Priority 1: Safety warnings (shortest cooldown)
+        if has_warning:
+            if current_time - self.last_warning_time < self.warning_cooldown:
+                return None  # Too soon for another warning
+            priority = "urgent"
+        
+        # Priority 2: New rep started (motivational + form check)
+        elif new_rep and current_rep > 0:
+            if current_time - self.last_feedback_time < self.feedback_cooldown:
+                return None
+            priority = "milestone"
+        
+        # Priority 3: Stage change (technique cues)
+        elif stage_changed and self.feedback_count > 0:  # Skip first stage change
+            if current_time - self.last_feedback_time < self.feedback_cooldown:
+                return None
+            priority = "technique"
+        
+        # Priority 4: Periodic check-ins
+        elif current_time - self.last_feedback_time > self.feedback_cooldown * 2:
+            priority = "encouragement"
+        
+        else:
+            return None  # No feedback needed now
         
         try:
+            # Enhance context with priority info
+            enhanced_context = context.copy() if context else {}
+            enhanced_context['feedback_priority'] = priority
+            enhanced_context['stage'] = current_stage
+            
             # Get LLM analysis
             feedback_text = self.groq_coach.analyze_posture(
                 exercise_type=exercise_type,
                 posture_data=posture_data,
-                context=context
+                context=enhanced_context
             )
             
             if feedback_text:
-                # Speak feedback
+                # Speak feedback with appropriate priority
                 if self.enable_voice:
-                    speak_feedback(feedback_text, priority=has_warning)
+                    speak_feedback(feedback_text, priority=(priority == "urgent"))
                 
                 # Update tracking
                 self.last_feedback_time = current_time
+                if has_warning:
+                    self.last_warning_time = current_time
                 self.rep_last_feedback = current_rep
+                self.last_stage = current_stage
+                self.feedback_count += 1
                 
-                logger.info(f"🗣️ Feedback: {feedback_text}")
+                logger.info(f"🗣️ [{priority.upper()}] Feedback: {feedback_text}")
                 return feedback_text
                 
         except Exception as e:
@@ -88,25 +121,46 @@ class AICoachCoordinator:
         
         return None
     
-    def give_encouragement(self, milestone_type="rep"):
+    def give_encouragement(self, milestone_type="rep", rep_num=0, total_reps=0):
         """
         Give encouraging feedback at milestones
         
         Args:
             milestone_type: Type of milestone (rep, set, workout_complete)
+            rep_num: Current rep number
+            total_reps: Total reps in set
         """
         if not self.enable_voice or not self.groq_coach:
             return
         
-        encouragements = {
-            "rep": self.groq_coach.quick_encouragement(),
-            "set": "Great set! Take a breath and keep going!",
-            "workout_complete": "Workout complete! Excellent work today!"
-        }
+        # Context-aware encouragements
+        if milestone_type == "rep":
+            if rep_num == 1:
+                message = "First rep! Focus on perfect form!"
+            elif rep_num == total_reps // 2:
+                message = "Halfway there! Keep pushing!"
+            elif rep_num >= total_reps - 2:
+                message = f"Almost done! {total_reps - rep_num} more!"
+            else:
+                message = self.groq_coach.quick_encouragement()
+        elif milestone_type == "set":
+            message = "Set complete! Shake it out, breathe deep!"
+        elif milestone_type == "workout_complete":
+            message = "Workout complete! Outstanding effort today!"
+        else:
+            message = "Keep going! You've got this!"
         
-        message = encouragements.get(milestone_type, "Keep going!")
         speak_feedback(message, priority=False)
         logger.info(f"🎉 Encouragement: {message}")
+    
+    def reset_session(self):
+        """Reset tracking variables for new workout session"""
+        self.last_feedback_time = 0
+        self.last_warning_time = 0
+        self.rep_last_feedback = -1
+        self.last_stage = None
+        self.feedback_count = 0
+        logger.info("🔄 AI Coach session reset")
     
     def _has_warning(self, posture_data):
         """Check if posture data contains warnings"""
