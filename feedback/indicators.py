@@ -1,4 +1,5 @@
 # feedback/indicators.py
+import cv2
 from utils.drawing_utils import draw_gauge_meter,draw_progress_bar,display_stage,display_counter
 
 display_counter_poisiton=(40, 240)
@@ -28,7 +29,8 @@ def draw_pushup_indicators(frame, counter, angle, stage):
     draw_gauge_meter(frame, angle=angle,text=text, position=(350,80), radius=50, color=(0, 102, 204))
 
 
-def draw_hammercurl_indicators(frame, counter_right, angle_right, counter_left, angle_left, stage_right, stage_left):
+def draw_hammercurl_indicators(frame, counter_right, angle_right, counter_left, angle_left, stage_right, stage_left,
+                               posture_errors=None, correct_reps_streak=0, ready_to_start=False):
     display_counter_poisiton_left_arm = (40, 300)
 
     # Right Arm Indicators
@@ -46,5 +48,15 @@ def draw_hammercurl_indicators(frame, counter_right, angle_right, counter_left, 
     # Gauge Meters for Angles
     draw_gauge_meter(frame, angle=angle_right,text=text_right, position=(1200,80), radius=50, color=(0, 102, 204))
     draw_gauge_meter(frame, angle=angle_left,text=text_left, position=(1200,240), radius=50, color=(0, 102, 204))
+
+    # Optional: if in test posture mode, show a minimal indicator for readiness or errors
+    # (UI behavior left minimal for now; these values are available if needed)
+    if posture_errors:
+        # Draw a small notification for the first error
+        draw_text = posture_errors[0] if len(posture_errors) > 0 else "Posture issue"
+        # position below the progress bar
+        cv2.putText(frame, draw_text, (40, 200), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)
+    elif ready_to_start:
+        cv2.putText(frame, "Ready to start (posture validated)", (40, 200), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 200, 0), 2)
 
 

@@ -114,12 +114,13 @@ def generate_frames():
                 elif current_exercise_data['type'] == "hammer_curl":
                     (counter_right, angle_right, counter_left, angle_left,
                      warning_message_right, warning_message_left, progress_right, 
-                     progress_left, stage_right, stage_left) = current_exercise.track_hammer_curl(
+                     progress_left, stage_right, stage_left, posture_errors, correct_reps_streak, ready_to_start) = current_exercise.track_hammer_curl(
                         results.pose_landmarks.landmark, frame)
                     layout_indicators(frame, current_exercise_data['type'], 
                                      (counter_right, angle_right, counter_left, angle_left,
                                       warning_message_right, warning_message_left, 
-                                      progress_right, progress_left, stage_right, stage_left))
+                                      progress_right, progress_left, stage_right, stage_left,
+                                      posture_errors, correct_reps_streak, ready_to_start))
                     exercise_counter = max(counter_right, counter_left)
                 
                 # Display exercise information
@@ -305,6 +306,65 @@ def get_status():
         'current_set': sets_completed + 1 if exercise_running else 0,
         'total_sets': sets_goal,
         'rep_goal': exercise_goal
+    })
+
+
+@app.route('/set_test_posture', methods=['POST'])
+def set_test_posture():
+    """Enable or disable test posture mode for the current exercise.
+
+    JSON body: { mode: 'test_posture'|'workout', exercise_type: optional }
+    If no current_exercise exists, will initialize the requested exercise (defaults to hammer_curl).
+    """
+    global current_exercise, current_exercise_data, exercise_running
+    data = request.json or {}
+    mode = data.get('mode', 'workout')
+    exercise_type = data.get('exercise_type', 'hammer_curl')
+
+    # If no exercise instance exists or different type requested, create one
+    if current_exercise is None or (current_exercise_data and current_exercise_data.get('type') != exercise_type):
+        # initialize camera and create exercise instance
+        initialize_camera()
+        if exercise_type == 'hammer_curl':
+            current_exercise = HammerCurl()
+        elif exercise_type == 'squat':
+            current_exercise = Squat()
+        elif exercise_type == 'push_up':
+            current_exercise = PushUp()
+        else:
+            return jsonify({'success': False, 'error': 'Invalid exercise type'})
+        current_exercise_data = {'type': exercise_type, 'sets': 0, 'reps': 0}
+        exercise_running = True
+
+    # Set mode on the exercise instance
+    try:
+        current_exercise.mode = mode
+        # Reset posture tracking state when entering test mode
+        if mode == 'test_posture':
+            current_exercise.correct_reps_streak = 0
+            current_exercise.last_feedback_errors = []
+            current_exercise.last_feedback_time = 0
+            current_exercise.ready_to_start = False
+        else:
+            # leaving test mode
+            current_exercise.ready_to_start = False
+        return jsonify({'success': True})
+    except Exception as e:
+        logger.error(f"Failed to set test posture mode: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/test_posture_status', methods=['GET'])
+def test_posture_status():
+    """Return the latest posture test status (errors, streak, ready flag)."""
+    if current_exercise is None:
+        return jsonify({'mode': 'none'})
+
+    return jsonify({
+        'mode': getattr(current_exercise, 'mode', 'workout'),
+        'last_feedback_errors': getattr(current_exercise, 'last_feedback_errors', []),
+        'correct_reps_streak': getattr(current_exercise, 'correct_reps_streak', 0),
+        'ready_to_start': getattr(current_exercise, 'ready_to_start', False)
     })
 
 @app.route('/clear_all_data', methods=['POST'])

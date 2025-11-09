@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let selectedExercise = null;
     let workoutRunning = false;
     let statusCheckInterval = null;
+    let postureCheckInterval = null;
     
     // Select exercise
     exerciseOptions.forEach(option => {
@@ -98,6 +99,59 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Error:', error);
         });
     });
+
+    // Test Posture button
+    const testPostureBtn = document.getElementById('test-posture-btn');
+    const postureStreakEl = document.getElementById('posture-streak');
+    let testMode = false;
+
+    testPostureBtn.addEventListener('click', function() {
+        // Toggle test posture mode
+        testMode = !testMode;
+        const mode = testMode ? 'test_posture' : 'workout';
+
+        // Use selectedExercise if available, default to hammer_curl
+        const exercise_type = selectedExercise || 'hammer_curl';
+
+        fetch('/set_test_posture', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mode: mode, exercise_type: exercise_type })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                testPostureBtn.textContent = testMode ? 'Stop Test' : 'Test Posture';
+                // Poll posture status when in test mode
+                if (testMode) {
+                    postureCheckInterval = setInterval(checkPostureStatus, 1000);
+                } else {
+                    if (postureCheckInterval) { clearInterval(postureCheckInterval); postureCheckInterval = null; }
+                    postureStreakEl.textContent = '0';
+                }
+            } else {
+                alert('Failed to toggle test posture: ' + (data.error || 'Unknown error'));
+            }
+        })
+        .catch(err => { console.error(err); alert('Error toggling test posture'); });
+    });
+
+    function checkPostureStatus() {
+        fetch('/test_posture_status')
+        .then(r => r.json())
+        .then(data => {
+            if (!data || data.mode === 'none') return;
+            postureStreakEl.textContent = data.correct_reps_streak || 0;
+            if (data.ready_to_start) {
+                // Stop polling and show message
+                if (postureCheckInterval) { clearInterval(postureCheckInterval); postureCheckInterval = null; }
+                alert('Posture validated — you\'re ready to start!');
+                testMode = false;
+                testPostureBtn.textContent = 'Test Posture';
+            }
+        })
+        .catch(err => console.error('Error fetching posture status', err));
+    }
     
     // Function to check status
     function checkStatus() {

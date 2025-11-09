@@ -48,11 +48,13 @@ def main():
                 layout_indicators(frame, exercise_type, (counter, angle, stage))
             elif exercise_type == "hammer_curl":
                 (counter_right, angle_right, counter_left, angle_left,
-                 warning_message_right, warning_message_left, progress_right, progress_left, stage_right, stage_left) = exercise.track_hammer_curl(
+                 warning_message_right, warning_message_left, progress_right, progress_left,
+                 stage_right, stage_left, posture_errors, correct_reps_streak, ready_to_start) = exercise.track_hammer_curl(
                     results.pose_landmarks.landmark, frame)
                 layout_indicators(frame, exercise_type,
                                   (counter_right, angle_right, counter_left, angle_left,
-                                   warning_message_right, warning_message_left, progress_right, progress_left, stage_right, stage_left))
+                                   warning_message_right, warning_message_left, progress_right, progress_left, stage_right, stage_left,
+                                   posture_errors, correct_reps_streak, ready_to_start))
             elif exercise_type == "push_up":
                 counter, angle, stage = exercise.track_push_up(results.pose_landmarks.landmark, frame)
                 layout_indicators(frame, exercise_type, (counter, angle, stage))

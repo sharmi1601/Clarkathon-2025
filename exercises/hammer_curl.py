@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import time
 from pose_estimation.angle_calculation import calculate_angle
 
 class HammerCurl:
@@ -15,6 +16,15 @@ class HammerCurl:
 
         self.angle_threshold_up = 155  # Upper threshold for 'up' stage
         self.angle_threshold_down = 47  # Lower threshold for 'down' stage
+        # Test posture / feedback mode state
+        # mode: "workout" (normal) or "test_posture" (give corrective feedback)
+        self.mode = "workout"
+        # Number of consecutive correct reps detected in posture-test mode
+        self.correct_reps_streak = 0
+        # Timestamp (time.time()) when last feedback was emitted (throttle feedback)
+        self.last_feedback_time = 0
+        # Last set of posture errors reported (to avoid repeating same messages)
+        self.last_feedback_errors = []
 
     def calculate_shoulder_elbow_hip_angle(self, shoulder, elbow, hip):
         """Calculate the angle between shoulder, elbow, and hip."""
@@ -23,6 +33,48 @@ class HammerCurl:
     def calculate_shoulder_elbow_wrist(self, shoulder, elbow, wrist):
         """Calculate the angle between shoulder, elbow, and wrist."""
         return calculate_angle(shoulder, elbow, wrist)
+
+    def get_posture_feedback(self, angle_sh_el_hip_right, angle_sh_el_hip_left,
+                             angle_flex_right, angle_flex_left):
+        """Return a list of human-readable posture errors for hammer curl.
+
+        Parameters
+        - angle_sh_el_hip_right/left: shoulder-elbow-hip angle (used to detect drift)
+        - angle_flex_right/left: elbow flexion angle (used to detect curl extent)
+
+        Checks performed:
+        - Elbow drift: shoulder-elbow-hip angle too large (uses self.angle_threshold)
+        - Arm not fully curled: flexion angle not below self.angle_threshold_down
+        - Arm not returning to start: flexion angle not above self.angle_threshold_up
+        """
+        errors = []
+
+        # Right arm checks
+        if abs(angle_sh_el_hip_right) > self.angle_threshold:
+            errors.append(f"Right elbow drifting (shoulder-elbow-hip angle {angle_sh_el_hip_right:.1f}°)")
+
+        # Not fully curled: flexion angle should be below the low threshold
+        if angle_flex_right >= self.angle_threshold_down:
+            errors.append("Right arm not fully curled")
+
+        # Not returning to start: start position expected to be a large flexion angle
+        if angle_flex_right <= self.angle_threshold_up:
+            # If it's much lower than the start threshold, consider it not returned
+            if angle_flex_right < (self.angle_threshold_up - 10):
+                errors.append("Right arm not returning to start position")
+
+        # Left arm checks
+        if abs(angle_sh_el_hip_left) > self.angle_threshold:
+            errors.append(f"Left elbow drifting (shoulder-elbow-hip angle {angle_sh_el_hip_left:.1f}°)")
+
+        if angle_flex_left >= self.angle_threshold_down:
+            errors.append("Left arm not fully curled")
+
+        if angle_flex_left <= self.angle_threshold_up:
+            if angle_flex_left < (self.angle_threshold_up - 10):
+                errors.append("Left arm not returning to start position")
+
+        return errors
 
     def track_hammer_curl(self, landmarks, frame):
         # Right arm landmarks (shoulder, elbow, hip, wrist)
@@ -72,7 +124,7 @@ class HammerCurl:
         cv2.putText(frame, f'Angle: {int(angle_right_counter)}', angle_text_position_right, cv2.FONT_HERSHEY_SIMPLEX,
                     0.5,
                     (255, 255, 255), 2)
-
+        
         warning_message_right = None
         warning_message_left = None
 
@@ -102,7 +154,42 @@ class HammerCurl:
         progress_right = 1 if self.stage_right == "up" else 0
         progress_left = 1 if self.stage_left == "up" else 0
 
-        return self.counter_right, angle_right_counter, self.counter_left, angle_left_counter, warning_message_right, warning_message_left, progress_right, progress_left, self.stage_right, self.stage_left
+        # Posture-test mode logic
+        posture_errors = []
+        correct_reps_streak = getattr(self, 'correct_reps_streak', 0)
+        ready_to_start = False
+
+        if getattr(self, 'mode', 'workout') == 'test_posture':
+            # Compute posture errors using the helper
+            posture_errors = self.get_posture_feedback(angle_right, angle_left, angle_right_counter, angle_left_counter)
+
+            current_time = time.time()
+            # If there are errors, decide whether to emit feedback (changed or throttled)
+            if posture_errors:
+                # Reset streak
+                self.correct_reps_streak = 0
+                # Check if errors changed or throttle (5s)
+                if posture_errors != self.last_feedback_errors or (current_time - getattr(self, 'last_feedback_time', 0)) > 5:
+                    # update feedback tracking
+                    self.last_feedback_time = current_time
+                    self.last_feedback_errors = posture_errors.copy()
+                    # In real integration we'd prepare/send feedback now
+                correct_reps_streak = 0
+            else:
+                # No errors: increase streak
+                self.correct_reps_streak = getattr(self, 'correct_reps_streak', 0) + 1
+                correct_reps_streak = self.correct_reps_streak
+                if self.correct_reps_streak >= 3:
+                    ready_to_start = True
+        else:
+            # Not in test posture mode: return defaults
+            posture_errors = []
+            correct_reps_streak = getattr(self, 'correct_reps_streak', 0)
+            ready_to_start = False
+
+        return (self.counter_right, angle_right_counter, self.counter_left, angle_left_counter,
+                warning_message_right, warning_message_left, progress_right, progress_left,
+                self.stage_right, self.stage_left, posture_errors, correct_reps_streak, ready_to_start)
 
     def draw_line_with_style(self, frame, start_point, end_point, color, thickness):
         cv2.line(frame, start_point, end_point, color, thickness, lineType=cv2.LINE_AA)
