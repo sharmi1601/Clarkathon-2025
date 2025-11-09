@@ -100,6 +100,50 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    // Voice Coach toggle button
+    const voiceCoachBtn = document.getElementById('voice-coach-btn');
+    const aiCoachStatus = document.getElementById('ai-coach-status');
+    
+    if (voiceCoachBtn) {
+        // Check AI coach status on load
+        fetch('/ai_coach_status')
+            .then(response => response.json())
+            .then(data => {
+                if (data.available) {
+                    aiCoachStatus.style.display = 'flex';
+                    voiceCoachBtn.setAttribute('data-enabled', data.voice_enabled ? 'true' : 'false');
+                    voiceCoachBtn.textContent = `Voice Coach: ${data.voice_enabled ? 'ON' : 'OFF'}`;
+                } else {
+                    voiceCoachBtn.style.display = 'none';
+                }
+            })
+            .catch(error => console.error('Error checking AI coach status:', error));
+        
+        voiceCoachBtn.addEventListener('click', function() {
+            const currentlyEnabled = this.getAttribute('data-enabled') === 'true';
+            const newState = !currentlyEnabled;
+            
+            fetch('/toggle_voice_coach', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ enable: newState })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    this.setAttribute('data-enabled', data.voice_enabled ? 'true' : 'false');
+                    this.textContent = `Voice Coach: ${data.voice_enabled ? 'ON' : 'OFF'}`;
+                    console.log(`Voice coaching ${data.voice_enabled ? 'enabled' : 'disabled'}`);
+                }
+            })
+            .catch(error => {
+                console.error('Error toggling voice coach:', error);
+            });
+        });
+    }
+
     // Test Posture button
     const testPostureBtn = document.getElementById('test-posture-btn');
     const postureStreakEl = document.getElementById('posture-streak');

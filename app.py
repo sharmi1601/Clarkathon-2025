@@ -51,6 +51,27 @@ except ImportError:
     
     workout_logger = DummyWorkoutLogger()
 
+# Try to import AI Coach (optional)
+ai_coach = None
+try:
+    from ai.coach_coordinator import initialize_coach
+    import os
+    # Groq API key - load from environment variable for security
+    GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
+    
+    if GROQ_API_KEY:
+        ai_coach = initialize_coach(groq_api_key=GROQ_API_KEY, enable_voice=True)
+        if ai_coach:
+            logger.info("✅ AI Coach with Groq LLM initialized successfully!")
+            # Test voice (optional - uncomment to test)
+            # ai_coach.test_voice()
+    else:
+        logger.warning("⚠️ GROQ_API_KEY environment variable not set")
+        logger.info("Set it with: export GROQ_API_KEY='your-key-here'")
+except Exception as e:
+    logger.warning(f"⚠️ AI Coach not available: {e}")
+    logger.info("Continuing without AI coaching features")
+
 logger.info("Setting up Flask application")
 app = Flask(__name__)
 app.secret_key = 'fitness_trainer_secret_key'  # Required for sessions
@@ -106,10 +127,40 @@ def generate_frames():
                     layout_indicators(frame, current_exercise_data['type'], (counter, angle, stage))
                     exercise_counter = counter
                     
+                    # AI Coach feedback for squats
+                    if ai_coach:
+                        posture_data = {
+                            'angle': angle,
+                            'stage': stage,
+                            'warning': None  # Squats don't have warnings in current implementation
+                        }
+                        context = {
+                            'rep': counter,
+                            'goal_reps': exercise_goal,
+                            'set': sets_completed + 1,
+                            'goal_sets': sets_goal
+                        }
+                        ai_coach.analyze_and_coach("squat", posture_data, context)
+                    
                 elif current_exercise_data['type'] == "push_up":
                     counter, angle, stage = current_exercise.track_push_up(results.pose_landmarks.landmark, frame)
                     layout_indicators(frame, current_exercise_data['type'], (counter, angle, stage))
                     exercise_counter = counter
+                    
+                    # AI Coach feedback for push-ups
+                    if ai_coach:
+                        posture_data = {
+                            'angle': angle,
+                            'stage': stage,
+                            'warning': None  # Push-ups don't have warnings in current implementation
+                        }
+                        context = {
+                            'rep': counter,
+                            'goal_reps': exercise_goal,
+                            'set': sets_completed + 1,
+                            'goal_sets': sets_goal
+                        }
+                        ai_coach.analyze_and_coach("push_up", posture_data, context)
                     
                 elif current_exercise_data['type'] == "hammer_curl":
                     (counter_right, angle_right, counter_left, angle_left,
@@ -122,6 +173,24 @@ def generate_frames():
                                       progress_right, progress_left, stage_right, stage_left,
                                       posture_errors, correct_reps_streak, ready_to_start))
                     exercise_counter = max(counter_right, counter_left)
+                    
+                    # AI Coach feedback for hammer curls
+                    if ai_coach:
+                        posture_data = {
+                            'angle_right': angle_right,
+                            'angle_left': angle_left,
+                            'stage_right': stage_right,
+                            'stage_left': stage_left,
+                            'warning_right': warning_message_right,
+                            'warning_left': warning_message_left
+                        }
+                        context = {
+                            'rep': exercise_counter,
+                            'goal_reps': exercise_goal,
+                            'set': sets_completed + 1,
+                            'goal_sets': sets_goal
+                        }
+                        ai_coach.analyze_and_coach("hammer_curl", posture_data, context)
                 
                 # Display exercise information
                 exercise_info = get_exercise_info(current_exercise_data['type'])
@@ -150,11 +219,16 @@ def generate_frames():
                         exercise_running = False
                         draw_text_with_background(frame, "WORKOUT COMPLETE!", (frame.shape[1]//2 - 150, frame.shape[0]//2),
                                                 cv2.FONT_HERSHEY_DUPLEX, 1.2, (255, 255, 255), (0, 200, 0), 2)
+                        # AI Coach: Workout complete celebration
+                        if ai_coach:
+                            ai_coach.give_encouragement("workout_complete")
                     else:
                         draw_text_with_background(frame, f"SET {sets_completed} COMPLETE! Rest for 30 sec", 
                                                 (frame.shape[1]//2 - 200, frame.shape[0]//2),
                                                 cv2.FONT_HERSHEY_DUPLEX, 1.0, (255, 255, 255), (0, 0, 200), 2)
-                        # We could add rest timer functionality here
+                        # AI Coach: Set complete encouragement
+                        if ai_coach:
+                            ai_coach.give_encouragement("set")
         else:
             # Display welcome message if no exercise is running
             cv2.putText(frame, "Select an exercise to begin", (frame.shape[1]//2 - 150, frame.shape[0]//2),
@@ -376,6 +450,38 @@ def clear_all_data():
     except Exception as e:
         logger.error(f"Error clearing data: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/toggle_voice_coach', methods=['POST'])
+def toggle_voice_coach():
+    """Enable or disable voice coaching"""
+    global ai_coach
+    
+    if not ai_coach:
+        return jsonify({'success': False, 'error': 'AI Coach not available'}), 400
+    
+    data = request.json or {}
+    enable = data.get('enable', True)
+    
+    ai_coach.enable_voice = enable
+    logger.info(f"Voice coaching {'enabled' if enable else 'disabled'}")
+    
+    return jsonify({'success': True, 'voice_enabled': enable})
+
+@app.route('/ai_coach_status', methods=['GET'])
+def ai_coach_status():
+    """Get AI coach status"""
+    if not ai_coach:
+        return jsonify({
+            'available': False,
+            'voice_enabled': False
+        })
+    
+    return jsonify({
+        'available': True,
+        'voice_enabled': ai_coach.enable_voice,
+        'model': 'Groq Llama 3.3 70B',
+        'ready': True
+    })
 
 @app.route('/profile')
 def profile():

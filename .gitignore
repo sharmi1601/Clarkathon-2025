@@ -1,4 +1,4 @@
-# Virtual Environment
+## Virtual Environment
 venv/
 env/
 ENV/
@@ -13,6 +13,11 @@ __pycache__/
 *.db
 *.sqlite
 *.sqlite3
+
+# AI/Audio Temp Files
+temp_audio/
+*.mp3
+*.wav
 
 # IDE
 .vscode/
