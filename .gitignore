@@ -3,6 +3,10 @@ venv/
 env/
 ENV/
 
+# API Keys (keep secret!)
+api_key.txt
+.env
+
 # Python Cache
 __pycache__/
 *.py[cod]
